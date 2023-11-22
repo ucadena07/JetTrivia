@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -48,11 +50,22 @@ import com.example.jettrivia.model.QuestionItem
 @Composable
 fun Questions(viewModel: QuestionsViewModel) {
     val questions = viewModel.data.value.data?.toMutableList()
+    val questionIndex = remember {
+        mutableStateOf(0)
+    }
     if (viewModel.data.value.loading == true) {
         CircularProgressIndicator()
     } else {
         if(questions != null){
-            QuestionDisplay(questions.first() )
+            val question = try {
+                questions?.get(questionIndex.value)
+            }catch (ex: Exception){
+                null
+            }
+            QuestionDisplay(question = question!!, questionIndex = questionIndex,
+                viewModel = viewModel ){
+                questionIndex.value = questionIndex.value + 1
+            }
         }
     }
 
@@ -62,8 +75,8 @@ fun Questions(viewModel: QuestionsViewModel) {
 //@Preview
 @Composable
 fun QuestionDisplay(question: QuestionItem,
-                    //QuestionIndex: MutableState<Int>,
-                    //viewModel:QuestionsViewModel,
+                    questionIndex: MutableState<Int>,
+                    viewModel:QuestionsViewModel,
                     onNextClicked: (Int) -> Unit = {}) {
 
     val choicesState = remember(question){
@@ -75,7 +88,7 @@ fun QuestionDisplay(question: QuestionItem,
     val correctAnswerState = remember(question){
         mutableStateOf<Boolean?>(null)
     }
-    val updateAnswer: (Int) -> Unit = remember{
+    val updateAnswer: (Int) -> Unit = remember(question){
         {
             answerState.value = it
             correctAnswerState.value = choicesState[it] == question.answer
@@ -84,15 +97,14 @@ fun QuestionDisplay(question: QuestionItem,
     val pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
     Surface(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(4.dp), color = AppColors.mDarkPurple
+            .fillMaxSize(),color = AppColors.mDarkPurple
     ) {
         Column(
             modifier = Modifier
                 .padding(12.dp), verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            QuestionTracker()
+            QuestionTracker(questionIndex.value)
             DrawDottedLine(pathEffect)
             Column {
                 Text(
@@ -133,9 +145,33 @@ fun QuestionDisplay(question: QuestionItem,
                             }else{
                                 Color.Red.copy(0.2f)
                             }))//end radio
-                        Text(text = s)
+                        val annotatedString = buildAnnotatedString {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Light, color =if(correctAnswerState.value == true && index == answerState.value){
+                                Color.Green
+                            }else if(correctAnswerState.value == false && index == answerState.value){
+                                Color.Red
+                            }else{
+                                AppColors.mOffWhite
+                            }, fontSize = 17.sp)){
+                                append(s)
+                            }
+                        }
+                        Text(text = annotatedString)
                     }
                 }
+                Button(onClick = { onNextClicked(questionIndex.value) },
+                    modifier = Modifier
+                        .padding(3.dp)
+                        .align(alignment = Alignment.CenterHorizontally),
+                    shape = RoundedCornerShape(34.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.mLightBlue), content = {
+                        Text(text = "Next",
+                            modifier = Modifier.padding(4.dp),
+                            color = AppColors.mOffWhite,
+                            fontSize = 17.sp)
+
+                    })
             }
         }
 

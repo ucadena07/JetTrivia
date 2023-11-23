@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.example.jettrivia.screen.QuestionsViewModel
 import com.example.jettrivia.util.AppColors
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.text.style.TextAlign
 import com.example.jettrivia.model.QuestionItem
 
 @Composable
@@ -106,6 +107,9 @@ fun QuestionDisplay(question: QuestionItem,
                 .padding(12.dp), verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
+            if(questionIndex.value >= 3){
+                ShowProgress(questionIndex.value )
+            }
             QuestionTracker(questionIndex.value)
             DrawDottedLine(pathEffect)
             Column {
@@ -228,6 +232,9 @@ fun QuestionTracker(counter: Int = 10, outOf: Int = 100) {
 @Composable
 fun ShowProgress(score: Int = 12){
     val gradient = Brush.linearGradient(listOf(Color(0xFFF95075),Color(0xFFBE6BE5)))
+    val progressFactor = remember(score) {
+        mutableStateOf(score*.005f)
+    }
     Row(modifier = Modifier
         .padding(3.dp)
         .fillMaxWidth()
@@ -256,13 +263,18 @@ fun ShowProgress(score: Int = 12){
         verticalAlignment = Alignment.CenterVertically) {
         Button(onClick = { /*TODO*/ },
             contentPadding = PaddingValues(1.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth(progressFactor.value)
                 .background(brush = gradient), enabled = false,
             elevation = null, colors = buttonColors(
                 containerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent
             )) {
-
+            Text((score*10).toString(),
+                modifier = Modifier.clip(shape = RoundedCornerShape(23.dp))
+                    .fillMaxHeight(.87f)
+                    .fillMaxWidth()
+                    .padding(6.dp), color = AppColors.mOffWhite, textAlign = TextAlign.Center)
         }
     }
 }
